@@ -2,8 +2,8 @@
 // Created by Don Johnny on 2022/4/11.
 //
 
-#ifndef ZYGISK_MODULE_MIPUSHFAKE_UTIL_H
-#define ZYGISK_MODULE_MIPUSHFAKE_UTIL_H
+#ifndef ZYGISK_MODULE_RIZLIAR_UTIL_H
+#define ZYGISK_MODULE_RIZLIAR_UTIL_H
 
 // trim from start (in place)
 static inline void l_trim(std::string &s) {
@@ -26,4 +26,4 @@ static inline void trim(std::string &s) {
     r_trim(s);
 }
 
-#endif //ZYGISK_MODULE_MIPUSHFAKE_UTIL_H
+#endif //ZYGISK_MODULE_RIZLIAR_UTIL_H

@@ -22,37 +22,19 @@ using zygisk::Api;
 using zygisk::AppSpecializeArgs;
 using zygisk::ServerSpecializeArgs;
 
-#define LOG_DEBUG_MPF(...) __android_log_print(ANDROID_LOG_DEBUG, "MiPushFake", __VA_ARGS__)
-#define LOG_INFO_MPF(...) __android_log_print(ANDROID_LOG_INFO, "MiPushFake", __VA_ARGS__)
-#define LOG_WARN_MPF(...) __android_log_print(ANDROID_LOG_WARN, "MiPushFake", __VA_ARGS__)
-#define LOG_ERROR_MPF(...) __android_log_print(ANDROID_LOG_ERROR, "MiPushFake", __VA_ARGS__)
+#define LOG_DEBUG_MPF(...) __android_log_print(ANDROID_LOG_DEBUG, "Rizliar", __VA_ARGS__)
+#define LOG_INFO_MPF(...) __android_log_print(ANDROID_LOG_INFO, "Rizliar", __VA_ARGS__)
+#define LOG_WARN_MPF(...) __android_log_print(ANDROID_LOG_WARN, "Rizliar", __VA_ARGS__)
+#define LOG_ERROR_MPF(...) __android_log_print(ANDROID_LOG_ERROR, "Rizliar", __VA_ARGS__)
 #define LOG_BYTE_HOOK(fmt, ...) __android_log_print(ANDROID_LOG_DEBUG, "ByteHook", fmt, ##__VA_ARGS__)
 
 static std::vector<std::string> packages_2_work;
 static long time_next_read_packages_2_work = 0;
-const static std::string conf_file_path = "/data/adb/mi-push-fake/packages.txt";
+const static std::string conf_file_path = "/data/adb/modules/rizliar/packages.txt";
 // properties to hack.
-const static char *brand_hack = "Xiaomi";
-const static char *internal_storage_hack = "/sdcard/";
-const static char *fingerprint_hack = "Xiaomi/missi/missi:12/SP1A.210812.016/V12.0.9.0.SLKCNXM:user/release-keys";
-const static char *version_name_hack = "V12";
-const static char *version_code_hack = "10";
-const static char *version_code_time_hack = "1592409600";
-const static char *notch_hack = "1";
+const static char *sim_hack = "hk";
 const static std::map<std::string, std::string> props_4_hack{
-        {"ro.product.manufacturer",        brand_hack},
-        {"ro.product.system.manufacturer", brand_hack},
-        {"ro.product.vendor.manufacturer", brand_hack},
-        {"ro.product.brand",               brand_hack},
-        {"ro.product.system.brand",        brand_hack},
-        {"ro.product.vendor.brand",        brand_hack},
-        {"ro.fota.oem",                    brand_hack},
-        {"ro.system.build.fingerprint",    fingerprint_hack},
-        {"ro.miui.internal.storage",       internal_storage_hack},
-        {"ro.miui.ui.version.name",        version_name_hack},
-        {"ro.miui.ui.version.code",        version_code_hack},
-        {"ro.miui.version.code_time",      version_code_time_hack},
-        {"ro.miui.notch",                  notch_hack}
+        {"gsm.sim.operator.iso-country",   sim_hack}
 };
 
 // callback func for __system_property_read_callback
@@ -143,11 +125,11 @@ static void read_packages_2_work(const std::string &file) {
         packages_2_work.push_back(line_);
     }
     for (const auto &p: packages_2_work) {
-        LOG_INFO_MPF("mi push work package: [%s]", p.c_str());
+        LOG_INFO_MPF("Rizliar works on: [%s]", p.c_str());
     }
 }
 
-class MiPushFakeModule : public zygisk::ModuleBase {
+class RizliarModule : public zygisk::ModuleBase {
 public:
     void onLoad(Api *pApi, JNIEnv *pEnv) override {
         this->api = pApi;
@@ -166,61 +148,6 @@ public:
         pre_specialize("system_server");
     }
 
-    void postAppSpecialize([[maybe_unused]] const AppSpecializeArgs *args) override {
-        const char *process = env->GetStringUTFChars(args->nice_name, nullptr);
-        if (!this->IfManipulate) {
-            LOG_DEBUG_MPF("skip build info hijack for: [%s]", process);
-            env->ReleaseStringUTFChars(args->nice_name, process);
-            return;
-        }
-        LOG_INFO_MPF("inject android.os.Build for %s ", process);
-
-        jclass build_class = env->FindClass("android/os/Build");
-        if (build_class == nullptr) {
-            LOG_WARN_MPF("failed to inject android.os.Build for %s due to build is null", process);
-            return;
-        }
-
-        jstring new_brand = env->NewStringUTF("Xiaomi");
-        jstring new_product = env->NewStringUTF("Xiaomi");
-        jstring new_model = env->NewStringUTF("Mi 10");
-
-        jfieldID brand_id = env->GetStaticFieldID(build_class, "BRAND", "Ljava/lang/String;");
-        if (brand_id != nullptr) {
-            env->SetStaticObjectField(build_class, brand_id, new_brand);
-        }
-
-        jfieldID manufacturer_id = env->GetStaticFieldID(build_class, "MANUFACTURER", "Ljava/lang/String;");
-        if (manufacturer_id != nullptr) {
-            env->SetStaticObjectField(build_class, manufacturer_id, new_brand);
-        }
-
-        jfieldID product_id = env->GetStaticFieldID(build_class, "PRODUCT", "Ljava/lang/String;");
-        if (product_id != nullptr) {
-            env->SetStaticObjectField(build_class, product_id, new_product);
-        }
-
-        jfieldID device_id = env->GetStaticFieldID(build_class, "DEVICE", "Ljava/lang/String;");
-        if (device_id != nullptr) {
-            env->SetStaticObjectField(build_class, device_id, new_product);
-        }
-
-        jfieldID model_id = env->GetStaticFieldID(build_class, "MODEL", "Ljava/lang/String;");
-        if (model_id != nullptr) {
-            env->SetStaticObjectField(build_class, model_id, new_model);
-        }
-
-        if(env->ExceptionCheck())
-        {
-            env->ExceptionClear();
-        }
-
-        env->DeleteLocalRef(new_brand);
-        env->DeleteLocalRef(new_product);
-        env->DeleteLocalRef(new_model);
-
-        env->ReleaseStringUTFChars(args->nice_name, process);
-    }
 
 private:
     Api *api{};
@@ -303,6 +230,6 @@ static void companion_handler(int fd) {
     }
 }
 
-REGISTER_ZYGISK_MODULE(MiPushFakeModule)
+REGISTER_ZYGISK_MODULE(RizliarModule)
 
 REGISTER_ZYGISK_COMPANION(companion_handler)
